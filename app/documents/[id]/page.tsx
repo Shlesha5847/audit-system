@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
-import { currentUser, AuditLog } from "@/lib/constants";
+import { currentUser } from "@/lib/constants";
 import DocumentReviewActions from "./DocumentReviewActions";
+import AuditHistoryTimeline, { EnrichedAuditLog } from "./AuditHistoryTimeline";
 
 export const dynamic = "force-dynamic";
 
@@ -72,13 +73,35 @@ export default async function DocumentReviewPage({ params }: DocumentPageProps) 
     }
   }
 
-  // 4. Fetch Audit Logs for this document
+  // 4. Fetch Audit Logs in Chronological Order (ASC)
   const { data: auditLogs } = await supabase
     .from("audit_logs")
     .select("*")
     .eq("document_id", document.id)
     .eq("firm_id", currentUser.firm_id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: true });
+
+  // 5. Join User Names for all log entries
+  const performedByIds = Array.from(
+    new Set((auditLogs || []).map((log) => log.performed_by).filter(Boolean))
+  );
+
+  let usersMap: Record<string, string> = {};
+  if (performedByIds.length > 0) {
+    const { data: users } = await supabase
+      .from("users")
+      .select("id, name")
+      .in("id", performedByIds);
+
+    if (users) {
+      usersMap = users.reduce((acc, u) => ({ ...acc, [u.id]: u.name }), {});
+    }
+  }
+
+  const enrichedLogs: EnrichedAuditLog[] = (auditLogs || []).map((log) => ({
+    ...log,
+    userName: usersMap[log.performed_by] || log.performed_by || "User",
+  }));
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -161,52 +184,18 @@ export default async function DocumentReviewPage({ params }: DocumentPageProps) 
         currentStatus={document.status}
       />
 
-      {/* Audit Logs Section */}
+      {/* Audit History Timeline Section */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-xs">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
           <h3 className="text-base font-semibold text-gray-800">
-            Audit Trail ({auditLogs?.length || 0})
+            Audit History ({enrichedLogs.length})
           </h3>
+          <span className="text-xs text-gray-500">
+            Chronological Timeline
+          </span>
         </div>
 
-        <div className="p-6">
-          {auditLogs && auditLogs.length > 0 ? (
-            <ul className="divide-y divide-gray-100">
-              {auditLogs.map((log: AuditLog) => (
-                <li key={log.id} className="py-3 first:pt-0 last:pb-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
-                          {log.action}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          by <strong className="text-gray-700">{log.performed_by}</strong>
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-800 font-medium">
-                        {log.comment}
-                      </p>
-                    </div>
-                    <div className="text-xs text-gray-400 shrink-0">
-                      {new Date(log.created_at).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-gray-500 text-center py-4">
-              No audit logs recorded for this document.
-            </p>
-          )}
-        </div>
+        <AuditHistoryTimeline logs={enrichedLogs} />
       </div>
     </div>
   );

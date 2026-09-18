@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Audit System
+
+A Next.js (App Router, TypeScript, Tailwind CSS) web application for managing audit clients, document lifecycle workflows, review processes, and chronological audit trails powered by Supabase.
+
+---
+
+## Features
+
+- **Client Management (`/clients`)**: View client lists filtered by firm, create new clients, and navigate to client workspaces.
+- **Document Management (`/clients/[id]`)**: Upload files to Supabase Storage, store document records, and link uploaded documents to client profiles.
+- **Document Review Workflow (`/documents/[id]`)**: Role-based document review actions including:
+  - `[UPLOAD]` - Initial document upload
+  - `[REVIEW]` - Mark document `UNDER_REVIEW`
+  - `[APPROVED]` - Approve document
+  - `[CORRECTION]` - Request corrections with detailed reasoning
+- **Audit History Timeline**: Vertical timeline displaying a chronological history of all document actions with timestamps, user attribution, status labels, and highlighted correction reasons.
+
+---
+
+## Audit Trail Integrity
+
+> **Important**: **Audit logs are append-only to maintain integrity.**  
+> The system enforces that audit records can only be created upon state changes. No modification or deletion of existing audit entries is permitted under any circumstances.
+
+---
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router, Server Components & Client Components)
+- **Styling**: Tailwind CSS
+- **Database & Storage**: Supabase (PostgreSQL + Storage Buckets)
+- **Language**: TypeScript
+
+---
 
 ## Getting Started
 
-First, run the development server:
+1. **Clone the repository and install dependencies**:
+   ```bash
+   git clone https://github.com/Shlesha5847/audit-system.git
+   cd audit-system
+   npm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Configure Environment Variables**:
+   Create a `.env.local` file with your Supabase credentials:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-or-publishable-key
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Run Development Server**:
+   ```bash
+   npm run dev
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
