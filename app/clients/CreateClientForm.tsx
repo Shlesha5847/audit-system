@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { currentUser } from "@/lib/constants";
+import { useUser } from "@/lib/UserContext";
 
 export default function CreateClientForm() {
+  const { currentUser } = useUser();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -38,7 +39,7 @@ export default function CreateClientForm() {
   return (
     <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-xs mb-6">
       <h2 className="text-base font-semibold text-gray-800 mb-3">Add New Client</h2>
-      
+
       {errorMsg && (
         <div className="mb-3 p-3 bg-red-50 text-red-700 text-sm rounded border border-red-200">
           {errorMsg}

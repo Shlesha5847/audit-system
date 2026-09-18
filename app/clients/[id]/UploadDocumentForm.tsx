@@ -3,13 +3,14 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { currentUser } from "@/lib/constants";
+import { useUser } from "@/lib/UserContext";
 
 interface UploadDocumentFormProps {
   clientId: string;
 }
 
 export default function UploadDocumentForm({ clientId }: UploadDocumentFormProps) {
+  const { currentUser } = useUser();
   const [docName, setDocName] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -18,9 +19,30 @@ export default function UploadDocumentForm({ clientId }: UploadDocumentFormProps
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
+  // STAFF CAN upload; REVIEWER CANNOT upload
+  if (currentUser.role !== "staff") {
+    return (
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 text-sm text-gray-600 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-purple-500"></span>
+          <span>
+            Signed in as <strong className="text-gray-800">{currentUser.name}</strong> ({currentUser.role}). Document upload is restricted to <strong>Staff</strong>.
+          </span>
+        </div>
+        <span className="text-xs text-gray-400">Switch user in navbar to upload</span>
+      </div>
+    );
+  }
+
   async function handleUpload(e: React.FormEvent) {
     e.preventDefault();
     if (!docName.trim() || !file || loading) return;
+
+    // Logic protection: Enforce staff role check before action
+    if (currentUser.role !== "staff") {
+      setErrorMsg("Permission denied: Only staff members can upload documents.");
+      return;
+    }
 
     setLoading(true);
     setErrorMsg(null);
@@ -98,7 +120,12 @@ export default function UploadDocumentForm({ clientId }: UploadDocumentFormProps
 
   return (
     <div className="bg-white p-5 border border-gray-200 rounded-lg shadow-xs mb-6">
-      <h3 className="text-base font-semibold text-gray-800 mb-3">Upload Document</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-semibold text-gray-800">Upload Document</h3>
+        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-medium">
+          Staff Action ({currentUser.name})
+        </span>
+      </div>
 
       {errorMsg && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded">

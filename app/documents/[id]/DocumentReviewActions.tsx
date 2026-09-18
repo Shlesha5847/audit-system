@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { currentUser } from "@/lib/constants";
+import { useUser } from "@/lib/UserContext";
 
 interface DocumentReviewActionsProps {
   documentId: string;
@@ -14,17 +14,24 @@ export default function DocumentReviewActions({
   documentId,
   currentStatus,
 }: DocumentReviewActionsProps) {
+  const { currentUser } = useUser();
   const [loading, setLoading] = useState(false);
   const [correctionReason, setCorrectionReason] = useState("");
   const [showCorrectionInput, setShowCorrectionInput] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const router = useRouter();
 
-  // Only allow reviewer to see review buttons
+  // STAFF CANNOT review; REVIEWER CAN review
   if (currentUser.role !== "reviewer") {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-500">
-        Logged in as <strong className="text-gray-700">{currentUser.name}</strong> ({currentUser.role}). Only reviewers can perform review actions.
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-blue-500"></span>
+          <span>
+            Signed in as <strong className="text-gray-800">{currentUser.name}</strong> ({currentUser.role}). Review actions (Start Review, Approve, Request Correction) are restricted to <strong>Reviewers</strong>.
+          </span>
+        </div>
+        <span className="text-xs text-gray-400">Switch to Reviewer in navbar to review</span>
       </div>
     );
   }
@@ -34,6 +41,12 @@ export default function DocumentReviewActions({
     actionName: string,
     comment: string
   ) {
+    // Logic protection: Enforce reviewer role check before action
+    if (currentUser.role !== "reviewer") {
+      setErrorMsg("Permission denied: Only reviewers can perform review actions.");
+      return;
+    }
+
     setLoading(true);
     setErrorMsg(null);
 

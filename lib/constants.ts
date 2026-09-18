@@ -1,9 +1,27 @@
-export const currentUser = {
-  id: "99973873-79db-4f3e-b813-819cf5848a91", // Aman's actual user UUID in users table
-  name: "Aman",
-  role: "reviewer",
-  firm_id: "83478457-381c-42b9-b05d-fdc775e4ed9e", // Firm B
-};
+export interface User {
+  id: string;
+  name: string;
+  role: "staff" | "reviewer";
+  firm_id: string;
+}
+
+export const USERS: User[] = [
+  {
+    id: "e1e1ef1d-5a2a-433f-8894-0169ff46b9ca",
+    name: "Rohit",
+    role: "staff",
+    firm_id: "83478457-381c-42b9-b05d-fdc775e4ed9e", // Firm B
+  },
+  {
+    id: "99973873-79db-4f3e-b813-819cf5848a91",
+    name: "Aman",
+    role: "reviewer",
+    firm_id: "83478457-381c-42b9-b05d-fdc775e4ed9e", // Firm B
+  },
+];
+
+export const defaultUser: User = USERS[0]; // Rohit (Staff)
+export const currentUser: User = USERS[0];
 
 export interface Client {
   id: string;
