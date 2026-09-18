@@ -1,3 +1,13 @@
+export interface Firm {
+  id: string;
+  name: string;
+}
+
+export const FIRMS: Firm[] = [
+  { id: "e23cd1ac-43ba-4cfb-b09a-ba8760fd7b36", name: "Firm A" },
+  { id: "83478457-381c-42b9-b05d-fdc775e4ed9e", name: "Firm B" },
+];
+
 export interface User {
   id: string;
   name: string;
@@ -20,6 +30,7 @@ export const USERS: User[] = [
   },
 ];
 
+export const defaultFirm: Firm = FIRMS[1]; // Firm B
 export const defaultUser: User = USERS[0]; // Rohit (Staff)
 export const currentUser: User = USERS[0];
 

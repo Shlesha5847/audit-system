@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { supabase } from "@/lib/supabaseClient";
-import { currentUser, DocumentItem } from "@/lib/constants";
+import { defaultFirm, DocumentItem } from "@/lib/constants";
 import UploadDocumentForm from "./UploadDocumentForm";
 
 export const dynamic = "force-dynamic";
@@ -13,13 +14,15 @@ interface ClientPageProps {
 
 export default async function ClientDetailPage({ params }: ClientPageProps) {
   const { id } = await params;
+  const cookieStore = await cookies();
+  const activeFirmId = cookieStore.get("audit_firm_id")?.value || defaultFirm.id;
 
   // 1. Fetch Client Details
   const { data: client, error: clientError } = await supabase
     .from("clients")
     .select("*")
     .eq("id", id)
-    .eq("firm_id", currentUser.firm_id)
+    .eq("firm_id", activeFirmId)
     .single();
 
   if (clientError || !client) {
@@ -32,7 +35,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
           &larr; Back to Clients
         </Link>
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-          {clientError ? clientError.message : "Client not found or you do not have permission to view it."}
+          {clientError ? clientError.message : "Client not found or does not belong to the selected tenant firm."}
         </div>
       </div>
     );
@@ -43,7 +46,7 @@ export default async function ClientDetailPage({ params }: ClientPageProps) {
     .from("documents")
     .select("*")
     .eq("client_id", id)
-    .eq("firm_id", currentUser.firm_id)
+    .eq("firm_id", activeFirmId)
     .order("created_at", { ascending: false });
 
   return (

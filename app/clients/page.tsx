@@ -1,26 +1,34 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { supabase } from "@/lib/supabaseClient";
-import { currentUser, Client } from "@/lib/constants";
+import { defaultFirm, FIRMS, Client } from "@/lib/constants";
 import CreateClientForm from "./CreateClientForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function ClientsPage() {
+  const cookieStore = await cookies();
+  const activeFirmId = cookieStore.get("audit_firm_id")?.value || defaultFirm.id;
+  const activeFirm = FIRMS.find((f) => f.id === activeFirmId) || defaultFirm;
+
   const { data: clients, error } = await supabase
     .from("clients")
     .select("*")
-    .eq("firm_id", currentUser.firm_id)
+    .eq("firm_id", activeFirmId)
     .order("created_at", { ascending: false });
 
   return (
     <div className="max-w-5xl mx-auto p-6">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between border-b pb-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b pb-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Manage your audit clients for Firm ID: <code className="text-xs bg-gray-100 px-1 py-0.5 rounded font-mono">{currentUser.firm_id}</code>
+            Managing audit clients for tenant: <strong className="text-emerald-800 font-semibold">{activeFirm.name}</strong>
           </p>
+        </div>
+        <div className="text-xs text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200">
+          Firm ID: {activeFirmId}
         </div>
       </div>
 
@@ -79,7 +87,9 @@ export default async function ClientsPage() {
             ) : (
               <tr>
                 <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
-                  {error ? "Unable to display clients." : "No clients found. Create your first client above."}
+                  {error
+                    ? "Unable to display clients."
+                    : `No clients found for ${activeFirm.name}. Create your first client above.`}
                 </td>
               </tr>
             )}

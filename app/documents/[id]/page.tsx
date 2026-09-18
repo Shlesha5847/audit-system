@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { supabase } from "@/lib/supabaseClient";
-import { currentUser } from "@/lib/constants";
+import { defaultFirm } from "@/lib/constants";
 import DocumentReviewActions from "./DocumentReviewActions";
 import AuditHistoryTimeline, { EnrichedAuditLog } from "./AuditHistoryTimeline";
 
@@ -28,13 +29,15 @@ function getStatusBadgeClass(status: string) {
 
 export default async function DocumentReviewPage({ params }: DocumentPageProps) {
   const { id } = await params;
+  const cookieStore = await cookies();
+  const activeFirmId = cookieStore.get("audit_firm_id")?.value || defaultFirm.id;
 
   // 1. Fetch Document details
   const { data: document, error: docError } = await supabase
     .from("documents")
     .select("*")
     .eq("id", id)
-    .eq("firm_id", currentUser.firm_id)
+    .eq("firm_id", activeFirmId)
     .single();
 
   if (docError || !document) {
@@ -47,7 +50,7 @@ export default async function DocumentReviewPage({ params }: DocumentPageProps) 
           &larr; Back to Clients
         </Link>
         <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-          {docError ? docError.message : "Document not found or you do not have permission to view it."}
+          {docError ? docError.message : "Document not found or does not belong to the selected tenant firm."}
         </div>
       </div>
     );
@@ -78,7 +81,7 @@ export default async function DocumentReviewPage({ params }: DocumentPageProps) 
     .from("audit_logs")
     .select("*")
     .eq("document_id", document.id)
-    .eq("firm_id", currentUser.firm_id)
+    .eq("firm_id", activeFirmId)
     .order("created_at", { ascending: true });
 
   // 5. Join User Names for all log entries
