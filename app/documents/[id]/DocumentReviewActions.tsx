@@ -69,7 +69,7 @@ export default function DocumentReviewActions({
           firm_id: currentUser.firm_id,
           action: actionName,
           performed_by: currentUser.id,
-          comment: comment,
+          comment: comment, // Stores reason directly for corrections
         },
       ]);
 
@@ -106,12 +106,16 @@ export default function DocumentReviewActions({
 
   function handleCorrectionSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!correctionReason.trim()) return;
+    const trimmedReason = correctionReason.trim();
+    if (!trimmedReason) {
+      setErrorMsg("Please enter a reason for the correction request.");
+      return;
+    }
 
     performAction(
       "CORRECTION_REQUIRED",
       "CORRECTION_REQUESTED",
-      `${currentUser.name} requested correction: ${correctionReason.trim()}`
+      trimmedReason // Storing pure reason text as requested
     );
   }
 
@@ -160,7 +164,10 @@ export default function DocumentReviewActions({
         {/* Request Correction toggle */}
         <button
           type="button"
-          onClick={() => setShowCorrectionInput(!showCorrectionInput)}
+          onClick={() => {
+            setShowCorrectionInput(!showCorrectionInput);
+            setErrorMsg(null);
+          }}
           disabled={loading}
           className="px-4 py-2 bg-rose-600 text-white text-sm font-medium rounded-md hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -172,12 +179,15 @@ export default function DocumentReviewActions({
       {showCorrectionInput && (
         <form onSubmit={handleCorrectionSubmit} className="mt-4 p-4 bg-rose-50 border border-rose-200 rounded-lg space-y-3">
           <label className="block text-xs font-semibold text-rose-800">
-            Reason for Correction
+            Reason for Correction <span className="text-rose-600">*</span>
           </label>
           <textarea
             value={correctionReason}
-            onChange={(e) => setCorrectionReason(e.target.value)}
-            placeholder="Explain why correction is required (e.g. Missing signature on page 2, updated balance sheet needed)"
+            onChange={(e) => {
+              setCorrectionReason(e.target.value);
+              if (errorMsg) setErrorMsg(null);
+            }}
+            placeholder="Explain why correction is required (e.g. Page 3 is missing, updated balance sheet needed)"
             rows={3}
             className="w-full px-3 py-2 bg-white border border-rose-300 rounded-md text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
             disabled={loading}
@@ -186,7 +196,10 @@ export default function DocumentReviewActions({
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => setShowCorrectionInput(false)}
+              onClick={() => {
+                setShowCorrectionInput(false);
+                setErrorMsg(null);
+              }}
               className="px-3 py-1.5 bg-gray-200 text-gray-700 text-xs font-medium rounded hover:bg-gray-300"
               disabled={loading}
             >

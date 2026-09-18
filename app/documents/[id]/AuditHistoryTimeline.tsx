@@ -39,23 +39,23 @@ function getActionMeta(action: string) {
 }
 
 function parseLogComment(log: EnrichedAuditLog) {
-  const comment = log.comment || "";
-  const userName = log.userName || log.performed_by || "User";
+  const comment = (log.comment || "").trim();
+  const userName = log.userName || "User";
 
-  // Check if comment has a correction reason
-  if (
-    log.action === "CORRECTION_REQUESTED" ||
-    comment.includes("requested correction:")
-  ) {
-    const parts = comment.split(/requested correction:\s*/i);
-    const reason = parts[1] ? parts[1].trim() : "";
+  // Handle Correction Requested logs
+  if (log.action === "CORRECTION_REQUESTED") {
+    let reason = comment;
+    if (comment.includes("requested correction:")) {
+      const parts = comment.split(/requested correction:\s*/i);
+      reason = parts[1] ? parts[1].trim() : "";
+    }
     return {
       mainText: `${userName} requested correction`,
-      reason: reason,
+      reason: reason || "No reason specified",
     };
   }
 
-  // Check if comment starts with a name already
+  // Handle other actions
   return {
     mainText: comment || `${userName} performed ${log.action}`,
     reason: null,
@@ -79,7 +79,7 @@ export default function AuditHistoryTimeline({ logs }: AuditHistoryTimelineProps
           const { mainText, reason } = parseLogComment(log);
           const isCorrection = log.action === "CORRECTION_REQUESTED";
 
-          // Format time as 10:20 AM (and date if needed)
+          // Format time as 10:20 AM
           const dateObj = new Date(log.created_at);
           const formattedTime = dateObj.toLocaleTimeString("en-US", {
             hour: "2-digit",
@@ -116,7 +116,6 @@ export default function AuditHistoryTimeline({ logs }: AuditHistoryTimelineProps
                   isCorrection ? "text-rose-950 font-medium" : "text-gray-800"
                 }`}
               >
-                {/* Highlight bold user name */}
                 {log.userName && mainText.startsWith(log.userName) ? (
                   <>
                     <strong className="font-bold text-gray-900">{log.userName}</strong>

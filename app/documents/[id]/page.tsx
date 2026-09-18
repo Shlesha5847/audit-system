@@ -106,6 +106,24 @@ export default async function DocumentReviewPage({ params }: DocumentPageProps) 
     userName: usersMap[log.performed_by] || log.performed_by || "User",
   }));
 
+  // 6. Extract Latest Correction Reason (if any)
+  const correctionLogs = enrichedLogs.filter(
+    (log) => log.action === "CORRECTION_REQUESTED"
+  );
+  const latestCorrectionLog =
+    correctionLogs.length > 0 ? correctionLogs[correctionLogs.length - 1] : null;
+
+  let latestCorrectionReason = "";
+  if (latestCorrectionLog?.comment) {
+    const raw = latestCorrectionLog.comment.trim();
+    if (raw.includes("requested correction:")) {
+      latestCorrectionReason =
+        raw.split(/requested correction:\s*/i)[1]?.trim() || raw;
+    } else {
+      latestCorrectionReason = raw;
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Navigation Breadcrumbs */}
@@ -117,6 +135,25 @@ export default async function DocumentReviewPage({ params }: DocumentPageProps) 
           &larr; Back to Client ({client?.name || "Client"})
         </Link>
       </div>
+
+      {/* Prominent Correction Reason Banner when CORRECTION_REQUIRED */}
+      {document.status === "CORRECTION_REQUIRED" && (
+        <div className="bg-rose-50 border-2 border-rose-300 rounded-lg p-5 shadow-xs space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-bold bg-rose-600 text-white uppercase tracking-wider">
+              Status: CORRECTION_REQUIRED
+            </span>
+          </div>
+          <div>
+            <span className="font-bold text-rose-950 block text-xs uppercase tracking-wider mb-1">
+              Correction Reason:
+            </span>
+            <p className="font-medium text-rose-900 bg-white/90 p-3 rounded border border-rose-200 text-sm">
+              {latestCorrectionReason || "No reason specified."}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Document Details Card */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-xs space-y-4">
